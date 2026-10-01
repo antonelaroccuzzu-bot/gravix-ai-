@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -18,44 +19,49 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     setLoading(true);
     setError("");
     setMessage("");
 
-    if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: name,
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { display_name: name },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
-        },
-      });
+        });
 
-      if (error) {
-        setError(error.message);
+        if (error) {
+          setError(error.message);
+        } else if (data.session) {
+          router.push("/");
+          router.refresh();
+        } else {
+          setMessage(
+            "Account created! Check your inbox for the confirmation email. Open the link to activate your account."
+          );
+        }
       } else {
-        setMessage(
-          "Account created. Check your email if confirmation is required."
-        );
-      }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push("/");
-        router.refresh();
+        if (error) {
+          setError(error.message);
+        } else {
+          router.push("/");
+          router.refresh();
+        }
       }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
@@ -65,7 +71,6 @@ export default function LoginPage() {
           <div className="text-3xl font-black tracking-[-0.04em]">
             GRAVIX<span className="text-blue-500">.</span>
           </div>
-
           <p className="mt-3 text-sm text-zinc-500">
             {mode === "login"
               ? "Welcome back. Continue your AI workspace."
@@ -75,37 +80,24 @@ export default function LoginPage() {
 
         <div className="rounded-3xl border border-white/10 bg-[#0d0d12] p-6 shadow-2xl">
           <div className="mb-6 grid grid-cols-2 rounded-xl bg-black/40 p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("login");
-                setError("");
-                setMessage("");
-              }}
-              className={`rounded-lg py-2.5 text-sm font-medium transition ${
-                mode === "login"
-                  ? "bg-white text-black"
-                  : "text-zinc-500 hover:text-white"
-              }`}
-            >
-              Log in
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signup");
-                setError("");
-                setMessage("");
-              }}
-              className={`rounded-lg py-2.5 text-sm font-medium transition ${
-                mode === "signup"
-                  ? "bg-white text-black"
-                  : "text-zinc-500 hover:text-white"
-              }`}
-            >
-              Sign up
-            </button>
+            {(["login", "signup"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => {
+                  setMode(item);
+                  setError("");
+                  setMessage("");
+                }}
+                className={`rounded-lg py-2.5 text-sm font-medium transition ${
+                  mode === item
+                    ? "bg-white text-black"
+                    : "text-zinc-500 hover:text-white"
+                }`}
+              >
+                {item === "login" ? "Log in" : "Sign up"}
+              </button>
+            ))}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,14 +106,13 @@ export default function LoginPage() {
                 <label className="mb-2 block text-xs text-zinc-400">
                   Name
                 </label>
-
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
                   required
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none transition placeholder:text-zinc-700 focus:border-blue-500/60"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none placeholder:text-zinc-700 focus:border-blue-500/60"
                 />
               </div>
             )}
@@ -130,14 +121,13 @@ export default function LoginPage() {
               <label className="mb-2 block text-xs text-zinc-400">
                 Email
               </label>
-
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none transition placeholder:text-zinc-700 focus:border-blue-500/60"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none placeholder:text-zinc-700 focus:border-blue-500/60"
               />
             </div>
 
@@ -145,15 +135,14 @@ export default function LoginPage() {
               <label className="mb-2 block text-xs text-zinc-400">
                 Password
               </label>
-
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
+                placeholder="At least 6 characters"
                 minLength={6}
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none transition placeholder:text-zinc-700 focus:border-blue-500/60"
+                required
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none placeholder:text-zinc-700 focus:border-blue-500/60"
               />
             </div>
 
@@ -172,7 +161,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-white py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-white py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
             >
               {loading
                 ? "Please wait..."
@@ -182,10 +171,6 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
-
-        <p className="mt-6 text-center text-xs text-zinc-600">
-          Your GRAVIX conversations will be stored securely in your account.
-        </p>
       </div>
     </main>
   );
