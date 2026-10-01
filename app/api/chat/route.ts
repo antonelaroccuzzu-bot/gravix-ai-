@@ -1,10 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -17,12 +13,18 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
       return NextResponse.json(
-        { error: "OpenAI API key is not configured." },
+        { error: "OPENAI_API_KEY is missing in the deployment." },
         { status: 500 }
       );
     }
+
+    const openai = new OpenAI({
+      apiKey,
+    });
 
     const response = await openai.responses.create({
       model: "gpt-5",
@@ -34,11 +36,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       reply: response.output_text,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("GRAVIX AI error:", error);
 
+    const message =
+      error instanceof Error ? error.message : "Unknown OpenAI error.";
+
     return NextResponse.json(
-      { error: "Something went wrong while contacting GRAVIX AI." },
+      { error: message },
       { status: 500 }
     );
   }
