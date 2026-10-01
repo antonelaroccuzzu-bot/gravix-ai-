@@ -1,26 +1,30 @@
-
 "use client";
-
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client";
-
 type Conversation = {
   id: string;
   title: string;
   updated_at: string;
 };
-
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
 };
-
+function getErrorMessage(err: unknown): string {
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err
+  ) {
+    return String(err.message);
+  }
+  return String(err);
+}
 export default function Home() {
   const router = useRouter();
-  const supabase = createClient();
-
+  const [supabase] = useState(() => createClient());
   const [user, setUser] = useState<any>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -29,84 +33,71 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState("");
-
   const loadConversations = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("conversations")
       .select("id,title,updated_at")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
-
-    if (!error) setConversations(data || []);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setConversations(data || []);
   }, [supabase]);
-
   useEffect(() => {
     let mounted = true;
-
     async function init() {
-      const { data } = await supabase.auth.getUser();
-
+      const { data, error } = await supabase.auth.getUser();
       if (!mounted) return;
-
-      if (!data.user) {
+      if (error || !data.user) {
         router.replace("/login");
         return;
       }
-
       setUser(data.user);
       await loadConversations(data.user.id);
     }
-
     init();
-
     return () => {
       mounted = false;
     };
   }, [router, supabase, loadConversations]);
-
   async function openConversation(id: string) {
     setActiveId(id);
     setMessages([]);
     setError("");
     setSidebarOpen(false);
-
     const { data, error } = await supabase
       .from("messages")
       .select("id,role,content")
       .eq("conversation_id", id)
       .order("created_at", { ascending: true });
-
     if (error) {
       setError(error.message);
       return;
     }
-
-    setMessages((data || []).filter(
-      (m): m is Message =>
-        (m.role === "user" || m.role === "assistant") &&
-        typeof m.content === "string"
-    ));
+    setMessages(
+      (data || []).filter(
+        (m): m is Message =>
+          (m.role === "user" || m.role === "assistant") &&
+          typeof m.content === "string"
+      )
+    );
   }
-
-  async function newChat() {
+  function newChat() {
     setActiveId(null);
     setMessages([]);
     setInput("");
     setError("");
     setSidebarOpen(false);
   }
-
   async function sendMessage() {
     const text = input.trim();
-
     if (!text || loading || !user) return;
-
     setInput("");
     setError("");
     setLoading(true);
-
     let conversationId = activeId;
-
     try {
       if (!conversationId) {
         const { data, error } = await supabase
@@ -117,20 +108,15 @@ export default function Home() {
           })
           .select("id")
           .single();
-
         if (error) throw error;
-
         conversationId = data.id;
         setActiveId(conversationId);
       }
-
       const temporaryId = crypto.randomUUID();
-
       setMessages((current) => [
         ...current,
         { id: temporaryId, role: "user", content: text },
       ]);
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,13 +125,12 @@ export default function Home() {
           conversationId,
         }),
       });
-
       const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || "Something went wrong.");
+        throw new Error(
+          result.error || `Request failed with status ${response.status}`
+        );
       }
-
       setMessages((current) => [
         ...current,
         {
@@ -154,23 +139,18 @@ export default function Home() {
           content: result.reply,
         },
       ]);
-
       await loadConversations(user.id);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to send message."
-      );
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
-
   async function signOut() {
     await supabase.auth.signOut();
     router.replace("/login");
     router.refresh();
   }
-
   return (
     <main className="flex h-[100dvh] overflow-hidden bg-[#09090d] text-white">
       {sidebarOpen && (
@@ -180,7 +160,6 @@ export default function Home() {
           className="fixed inset-0 z-20 bg-black/60 md:hidden"
         />
       )}
-
       <aside
         className={`fixed inset-y-0 left-0 z-30 flex w-[280px] flex-col border-r border-white/10 bg-[#101015] transition-transform md:static md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -197,18 +176,15 @@ export default function Home() {
             ✕
           </button>
         </div>
-
         <button
           onClick={newChat}
           className="mx-3 mb-5 rounded-xl border border-white/10 px-4 py-3 text-left text-sm hover:bg-white/5"
         >
           + New chat
         </button>
-
         <div className="px-4 pb-2 text-xs font-medium text-zinc-500">
           Recent chats
         </div>
-
         <div className="flex-1 space-y-1 overflow-y-auto px-2">
           {conversations.map((conversation) => (
             <button
@@ -224,7 +200,6 @@ export default function Home() {
             </button>
           ))}
         </div>
-
         <div className="border-t border-white/10 p-3">
           <div className="mb-3 truncate px-2 text-xs text-zinc-500">
             {user?.email || "Your account"}
@@ -237,7 +212,6 @@ export default function Home() {
           </button>
         </div>
       </aside>
-
       <section className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
           <div className="flex items-center gap-3">
@@ -255,7 +229,6 @@ export default function Home() {
           </div>
           <div className="text-xs text-zinc-500">Workspace</div>
         </header>
-
         <div className="flex-1 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="flex min-h-full flex-col items-center justify-center px-5 pb-10 text-center">
@@ -305,11 +278,10 @@ export default function Home() {
             </div>
           )}
         </div>
-
         <div className="w-full px-3 pb-3 pt-2 sm:px-5">
           <div className="mx-auto max-w-3xl">
             {error && (
-              <p className="mb-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              <p className="mb-2 break-words rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300">
                 {error}
               </p>
             )}
