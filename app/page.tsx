@@ -2,23 +2,11 @@
 
 import { useState } from "react";
 
-const tools = [
-  { icon: "🤖", name: "AI Chat", description: "Chat with powerful AI" },
-  { icon: "💻", name: "Code Builder", description: "Build apps with AI" },
-  { icon: "🌐", name: "Website Builder", description: "Create websites" },
-  { icon: "🎨", name: "Image Creator", description: "Generate images" },
-  { icon: "🎬", name: "Video Creator", description: "Create videos" },
-  { icon: "✍️", name: "Writing", description: "Write anything" },
-  { icon: "🧠", name: "AI Agents", description: "Automate tasks" },
-];
-
 export default function Home() {
-  const [activeTool, setActiveTool] = useState("AI Chat");
   const [prompt, setPrompt] = useState("");
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const active = tools.find((tool) => tool.name === activeTool);
+  const [showAccount, setShowAccount] = useState(false);
 
   async function handleCreate() {
     if (!prompt.trim() || loading) return;
@@ -55,184 +43,153 @@ export default function Home() {
     }
   }
 
+  function useSuggestion(text: string) {
+    setPrompt(text);
+  }
+
   return (
-    <main className="min-h-screen bg-[#07070a] text-white">
-      <div className="flex min-h-screen">
-        <aside className="hidden md:flex w-[260px] shrink-0 flex-col border-r border-white/10 bg-[#0b0b10] p-4">
-          <div className="flex items-center gap-3 px-3 py-4 mb-6">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 text-xl font-black">
+    <main className="min-h-screen bg-[#08090b] text-white">
+      {/* Top navigation */}
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-white/[0.06] bg-[#08090b]/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-black text-black">
               G
             </div>
+
             <div>
-              <div className="text-lg font-bold">GRAVIX AI</div>
-              <div className="text-[9px] tracking-[0.25em] text-gray-500">
-                AI CREATION PLATFORM
+              <div className="text-sm font-semibold tracking-tight">
+                GRAVIX AI
+              </div>
+              <div className="text-[10px] tracking-[0.18em] text-white/35">
+                INTELLIGENCE PLATFORM
               </div>
             </div>
           </div>
 
-          <button className="mb-6 w-full rounded-xl bg-white py-3 text-sm font-semibold text-black">
-            + New Project
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="hidden rounded-lg px-3 py-2 text-sm text-white/55 transition hover:bg-white/[0.06] hover:text-white sm:block">
+              Projects
+            </button>
 
-          <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600">
-            Create
+            <button
+              onClick={() => setShowAccount(!showAccount)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-sm font-semibold transition hover:bg-white/10"
+            >
+              G
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Account popup */}
+      {showAccount && (
+        <div className="fixed right-4 top-[72px] z-50 w-64 rounded-2xl border border-white/10 bg-[#111216] p-4 shadow-2xl">
+          <div className="mb-4">
+            <p className="text-sm font-semibold">My Account</p>
+            <p className="mt-1 text-xs text-white/40">
+              Free Plan
+            </p>
           </div>
 
-          <div className="space-y-1">
-            {tools.map((tool) => (
+          <button className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-white/90">
+            Upgrade to Pro
+          </button>
+        </div>
+      )}
+
+      {/* Main workspace */}
+      <section className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 pb-8 pt-28 sm:px-6">
+        {/* Hero */}
+        <div className="flex flex-1 flex-col items-center justify-center">
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-2xl shadow-2xl">
+            ✦
+          </div>
+
+          <h1 className="text-center text-4xl font-semibold tracking-tight sm:text-5xl">
+            What can I help you create?
+          </h1>
+
+          <p className="mt-4 max-w-xl text-center text-sm leading-6 text-white/40 sm:text-base">
+            Ask GRAVIX to write, build, design, code, research,
+            create or edit. Just describe what you want.
+          </p>
+
+          {/* Suggestions */}
+          <div className="mt-8 flex max-w-2xl flex-wrap justify-center gap-2">
+            {[
+              "Build me a website",
+              "Create an app",
+              "Write something for me",
+              "Create an image",
+            ].map((item) => (
               <button
-                key={tool.name}
-                onClick={() => setActiveTool(tool.name)}
-                className={`flex w-full items-center gap-3 rounded-xl p-3 text-left ${
-                  activeTool === tool.name
-                    ? "border border-white/10 bg-white/10"
-                    : "hover:bg-white/5"
-                }`}
+                key={item}
+                onClick={() => useSuggestion(item)}
+                className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-white/55 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
               >
-                <span className="text-xl">{tool.icon}</span>
-                <div>
-                  <div className="text-sm font-medium">{tool.name}</div>
-                  <div className="text-[11px] text-gray-500">
-                    {tool.description}
-                  </div>
-                </div>
+                {item}
               </button>
             ))}
           </div>
 
-          <div className="mt-auto">
-            <div className="border-t border-white/10 pt-4">
-              <div className="flex items-center gap-3 px-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 font-bold">
+          {/* Response */}
+          {reply && (
+            <div className="mt-10 w-full max-w-3xl rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="mb-3 flex items-center gap-2 text-xs font-medium text-white/40">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white text-black">
                   G
-                </div>
-                <div>
-                  <div className="text-sm font-medium">My Account</div>
-                  <div className="text-xs text-gray-500">Free Plan</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <section className="min-w-0 flex-1">
-          <header className="flex h-16 items-center justify-between border-b border-white/10 px-5 md:px-8">
-            <div className="flex items-center gap-3 md:hidden">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-purple-600 font-black">
-                G
-              </div>
-              <span className="font-bold">GRAVIX AI</span>
-            </div>
-
-            <div className="hidden text-sm text-gray-500 md:block">
-              Workspace /{" "}
-              <span className="text-white">{activeTool}</span>
-            </div>
-
-            <div className="ml-auto flex items-center gap-2">
-              <div className="hidden rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-400 sm:block">
-                ⚡ 1,000 credits
-              </div>
-
-              <button className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black">
-                Upgrade
-              </button>
-            </div>
-          </header>
-
-          <div className="mx-auto max-w-5xl px-5 py-12 md:px-10">
-            <div className="mb-12 text-center">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-400">
-                ✦ GRAVIX AI
-              </div>
-
-              <h1 className="text-4xl font-black tracking-tight md:text-6xl">
-                What will you
-                <span className="block bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-                  create today?
                 </span>
-              </h1>
-
-              <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-gray-500 md:text-base">
-                One powerful AI workspace for chat, code, websites, images,
-                videos, writing and intelligent automation.
-              </p>
-            </div>
-
-            <div className="mb-10 grid grid-cols-2 gap-3 md:grid-cols-4">
-              {tools.slice(0, 4).map((tool) => (
-                <button
-                  key={tool.name}
-                  onClick={() => setActiveTool(tool.name)}
-                  className={`rounded-2xl border p-5 text-left transition ${
-                    activeTool === tool.name
-                      ? "border-blue-500/40 bg-blue-500/10"
-                      : "border-white/10 bg-white/[0.03]"
-                  }`}
-                >
-                  <div className="mb-3 text-2xl">{tool.icon}</div>
-                  <div className="text-sm font-semibold">{tool.name}</div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    {tool.description}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-[#0d0d12] p-3 shadow-2xl">
-              <div className="px-4 pt-3 text-xs text-gray-500">
-                {active?.icon} {activeTool}
+                GRAVIX
               </div>
 
+              <div className="whitespace-pre-wrap text-sm leading-7 text-white/85">
+                {reply}
+              </div>
+            </div>
+          )}
+
+          {/* Composer */}
+          <div className="mt-10 w-full max-w-3xl">
+            <div className="rounded-3xl border border-white/10 bg-[#111216] p-3 shadow-2xl shadow-black/30 transition focus-within:border-white/20">
               <textarea
                 value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
                     handleCreate();
                   }
                 }}
                 placeholder="Ask GRAVIX anything..."
-                className="min-h-[150px] w-full resize-none bg-transparent p-4 text-sm text-white outline-none placeholder:text-gray-600"
+                rows={3}
+                className="w-full resize-none bg-transparent px-3 py-2 text-sm leading-6 text-white outline-none placeholder:text-white/25"
               />
 
-              <div className="flex items-center justify-between px-2 pb-2">
-                <div className="flex gap-2">
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-lg">
-                    +
-                  </button>
-
-                  <button className="rounded-lg bg-white/5 px-3 text-xs text-gray-400">
-                    ⚡ Auto
-                  </button>
+              <div className="flex items-center justify-between px-2 pt-2">
+                <div className="flex items-center gap-2 text-xs text-white/25">
+                  <span>GRAVIX AI</span>
+                  <span>•</span>
+                  <span>Auto</span>
                 </div>
 
                 <button
                   onClick={handleCreate}
-                  disabled={loading}
-                  className="rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+                  disabled={!prompt.trim() || loading}
+                  className="flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-30"
                 >
-                  {loading ? "Thinking..." : "Create →"}
+                  {loading ? "Thinking..." : "Create"}
+                  {!loading && <span>↑</span>}
                 </button>
               </div>
             </div>
 
-            {reply && (
-              <div className="mt-6 rounded-3xl border border-white/10 bg-[#0d0d12] p-6">
-                <div className="mb-3 text-sm font-semibold text-gray-400">
-                  🤖 GRAVIX AI
-                </div>
-
-                <div className="whitespace-pre-wrap text-sm leading-7 text-gray-200">
-                  {reply}
-                </div>
-              </div>
-            )}
+            <p className="mt-3 text-center text-[11px] text-white/20">
+              GRAVIX can make mistakes. Check important information.
+            </p>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
