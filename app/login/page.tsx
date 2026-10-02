@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -41,7 +42,7 @@ export default function LoginPage() {
           router.refresh();
         } else {
           setMessage(
-            "Account created! Check your inbox for the confirmation email. Open the link to activate your account."
+            "Account created! Check your email for the confirmation link."
           );
         }
       } else {
@@ -64,22 +65,58 @@ export default function LoginPage() {
     }
   }
 
+  async function handleForgotPassword() {
+    setError("");
+    setMessage("");
+
+    if (!email.trim()) {
+      setError("Enter your email address first.");
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        }
+      );
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage(
+          "If an account exists for this email, a password reset link will be sent. Check your inbox and spam folder."
+        );
+      }
+    } catch {
+      setError("Unable to send the reset email. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-[#07070a] text-white flex items-center justify-center px-5">
-      <div className="w-full max-w-md">
-        <div className="mb-10 text-center">
-          <div className="text-3xl font-black tracking-[-0.04em]">
-            GRAVIX<span className="text-blue-500">.</span>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#070711] px-5 py-10 text-white">
+      <div className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-blue-600/20 blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-violet-600/20 blur-[140px]" />
+
+      <div className="relative z-10 w-full max-w-md">
+        <div className="mb-9 text-center">
+          <div className="text-4xl font-black tracking-[-0.06em]">
+            GRAVIX<span className="text-violet-400">.</span>
           </div>
-          <p className="mt-3 text-sm text-zinc-500">
+          <p className="mt-3 text-sm text-zinc-400">
             {mode === "login"
-              ? "Welcome back. Continue your AI workspace."
-              : "Create your GRAVIX AI account."}
+              ? "Welcome back. Your AI workspace awaits."
+              : "Create your account and get started."}
           </p>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-[#0d0d12] p-6 shadow-2xl">
-          <div className="mb-6 grid grid-cols-2 rounded-xl bg-black/40 p-1">
+        <div className="rounded-[28px] border border-white/10 bg-[#11111c]/90 p-6 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-8">
+          <div className="mb-7 grid grid-cols-2 rounded-2xl border border-white/5 bg-black/30 p-1">
             {(["login", "signup"] as const).map((item) => (
               <button
                 key={item}
@@ -89,10 +126,10 @@ export default function LoginPage() {
                   setError("");
                   setMessage("");
                 }}
-                className={`rounded-lg py-2.5 text-sm font-medium transition ${
+                className={`rounded-xl py-3 text-sm font-semibold transition ${
                   mode === item
-                    ? "bg-white text-black"
-                    : "text-zinc-500 hover:text-white"
+                    ? "bg-violet-500 text-white shadow-lg shadow-violet-950/40"
+                    : "text-zinc-400 hover:text-white"
                 }`}
               >
                 {item === "login" ? "Log in" : "Sign up"}
@@ -100,10 +137,10 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {mode === "signup" && (
               <div>
-                <label className="mb-2 block text-xs text-zinc-400">
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
                   Name
                 </label>
                 <input
@@ -112,14 +149,14 @@ export default function LoginPage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
                   required
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none placeholder:text-zinc-700 focus:border-blue-500/60"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-400"
                 />
               </div>
             )}
 
             <div>
-              <label className="mb-2 block text-xs text-zinc-400">
-                Email
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Email address
               </label>
               <input
                 type="email"
@@ -127,14 +164,29 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none placeholder:text-zinc-700 focus:border-blue-500/60"
+                autoComplete="email"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-400"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-xs text-zinc-400">
-                Password
-              </label>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label className="text-sm font-medium text-zinc-300">
+                  Password
+                </label>
+
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetLoading}
+                    className="text-xs font-medium text-violet-300 transition hover:text-violet-200 disabled:opacity-50"
+                  >
+                    {resetLoading ? "Sending..." : "Forgot password?"}
+                  </button>
+                )}
+              </div>
+
               <input
                 type="password"
                 value={password}
@@ -142,7 +194,10 @@ export default function LoginPage() {
                 placeholder="At least 6 characters"
                 minLength={6}
                 required
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm outline-none placeholder:text-zinc-700 focus:border-blue-500/60"
+                autoComplete={
+                  mode === "login" ? "current-password" : "new-password"
+                }
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-violet-400"
               />
             </div>
 
@@ -153,15 +208,15 @@ export default function LoginPage() {
             )}
 
             {message && (
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm leading-6 text-emerald-300">
                 {message}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-white py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-50"
+              disabled={loading || resetLoading}
+              className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-950/30 transition hover:brightness-110 disabled:opacity-50"
             >
               {loading
                 ? "Please wait..."
@@ -171,6 +226,10 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+
+        <p className="mt-6 text-center text-xs text-zinc-600">
+          GRAVIX AI · Your intelligent workspace
+        </p>
       </div>
     </main>
   );
